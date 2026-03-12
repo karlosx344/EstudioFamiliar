@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="es">
+<head><meta charset="UTF-8"><link rel="stylesheet" href="style.css"><title>Dashboard</title></head>
+<body style="display:block; padding:40px;">
+    <button onclick="location.href='index.html'" style="padding:10px 20px; cursor:pointer;">🏠 Volver</button>
+    <h1 id="title"></h1>
+    <textarea id="notes" placeholder="Tus notas se guardan automáticamente aquí..."></textarea>
+    <script>
+        const p = new URLSearchParams(window.location.search);
+        const u = p.get('user') || 'papa';
+        const names = { 'papa':'Papá Tech', 'hija':'Hija (12)', 'hijo':'Hijo (8)' };
+        document.getElementById('title').innerText = "Espacio de " + names[u];
+        const n = document.getElementById('notes');
+        n.value = localStorage.getItem('n_'+u) || "";
+        n.oninput = () => { 
+            localStorage.setItem('n_'+u, n.value);
+            if(u==='hijo') n.value = n.value.replace(':)','🌟');
+        };
+    </script>
+</body>
+</html>
