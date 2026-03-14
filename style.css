@@ -1,5 +1,144 @@
-:root { --papa: #1a2a6c; --hija: #b21f1f; --hijo: #fdbb2d; }
-body { font-family: 'Segoe UI', sans-serif; margin: 0; background: #2c3e50; color: white; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; }
-.card { background: rgba(255,255,255,0.1); backdrop-filter: blur(10px); padding: 25px; border-radius: 20px; margin: 15px; text-align: center; text-decoration: none; color: white; width: 180px; transition: 0.3s; border: 1px solid rgba(255,255,255,0.1); }
-.card:hover { transform: translateY(-10px); background: rgba(255,255,255,0.2); }
-textarea { width: 90%; height: 300px; border-radius: 15px; padding: 20px; border: none; margin-top: 20px; font-size: 16px; }
+﻿@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@500;700&display=swap');
+
+:root {
+    /* Paleta de colores Neón por usuario */
+    --papa: #00f2ff;
+    --mama: #b100ff;
+    --hija: #ff00a0;
+    --hijo: #ffaa00;
+    --peque: #00ff88;
+    
+    --bg-color: #030308;
+    --glass-bg: rgba(10, 10, 25, 0.4);
+    --glass-border: rgba(255, 255, 255, 0.1);
+}
+
+/* Fondo animado del espacio sideral */
+body { 
+    font-family: 'Rajdhani', sans-serif; 
+    background: var(--bg-color);
+    background-image: 
+        radial-gradient(circle at 15% 50%, rgba(0, 242, 255, 0.08), transparent 25%),
+        radial-gradient(circle at 85% 30%, rgba(177, 0, 255, 0.08), transparent 25%);
+    background-size: 200% 200%;
+    animation: panBackground 15s ease-in-out infinite alternate;
+    color: white; 
+    margin: 0; 
+    min-height: 100vh; 
+    overflow-x: hidden;
+}
+
+/* Animaciones Clave */
+@keyframes panBackground {
+    0% { background-position: 0% 50%; }
+    100% { background-position: 100% 50%; }
+}
+
+@keyframes float {
+    0% { transform: translateY(0px); }
+    50% { transform: translateY(-10px); }
+    100% { transform: translateY(0px); }
+}
+
+@keyframes pulseGlow {
+    0% { text-shadow: 0 0 10px currentColor; }
+    50% { text-shadow: 0 0 30px currentColor, 0 0 50px currentColor; }
+    100% { text-shadow: 0 0 10px currentColor; }
+}
+
+/* Tipografía de Títulos */
+h1.main-title {
+    font-family: 'Orbitron', sans-serif;
+    text-align: center;
+    font-size: 4em;
+    font-weight: 900;
+    margin-top: 50px;
+    letter-spacing: 8px;
+    color: #ffffff;
+    text-shadow: 0 0 20px rgba(255, 255, 255, 0.5);
+    text-transform: uppercase;
+}
+
+/* Efecto Cristal (Glassmorphism) */
+.glass-panel {
+    background: var(--glass-bg);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid var(--glass-border);
+    border-radius: 20px;
+    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.5);
+}
+
+/* Grid de Perfiles */
+.profile-grid {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 35px; 
+    padding: 50px; 
+    max-width: 1400px; 
+    margin: auto;
+}
+
+/* Tarjetas de Usuario */
+.user-card {
+    width: 220px;
+    padding: 40px 20px; 
+    text-align: center; 
+    transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    text-decoration: none; 
+    color: white; 
+    position: relative;
+    overflow: hidden;
+    animation: float 6s ease-in-out infinite;
+}
+
+/* Retraso de animación para que no floten todos a la vez */
+.user-card:nth-child(1) { animation-delay: 0s; }
+.user-card:nth-child(2) { animation-delay: 1s; }
+.user-card:nth-child(3) { animation-delay: 2s; }
+.user-card:nth-child(4) { animation-delay: 0.5s; }
+.user-card:nth-child(5) { animation-delay: 1.5s; }
+
+/* Efectos al pasar el ratón (Hover) */
+.user-card:hover { 
+    transform: translateY(-20px) scale(1.05); 
+    background: rgba(255,255,255,0.05); 
+    border-color: var(--user-color);
+    box-shadow: 0 0 30px var(--user-color), inset 0 0 20px rgba(255,255,255,0.05);
+}
+
+.user-card i { 
+    font-size: 4.5rem; 
+    display: block; 
+    margin-bottom: 20px; 
+    filter: drop-shadow(0 0 10px var(--user-color));
+}
+
+.user-card h3 {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 1.5rem;
+    margin: 10px 0 0 0;
+    color: var(--user-color);
+}
+
+.user-card p {
+    font-size: 1.1rem;
+    color: #aaaaaa;
+    margin-top: 5px;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+}
+
+/* Asignación de colores por usuario */
+.card-papa { --user-color: var(--papa); }
+.card-mama { --user-color: var(--mama); }
+.card-hija { --user-color: var(--hija); }
+.card-hijo { --user-color: var(--hijo); }
+.card-peque { --user-color: var(--peque); }
+
+/* Barra de desplazamiento personalizada (Scrollbar) */
+::-webkit-scrollbar { width: 10px; }
+::-webkit-scrollbar-track { background: var(--bg-color); }
+::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 5px; }
+::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.5); }

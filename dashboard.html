@@ -1,21 +1,189 @@
 <!DOCTYPE html>
 <html lang="es">
-<head><meta charset="UTF-8"><link rel="stylesheet" href="style.css"><title>Dashboard</title></head>
-<body style="display:block; padding:40px;">
-    <button onclick="location.href='index.html'" style="padding:10px 20px; cursor:pointer;">🏠 Volver</button>
-    <h1 id="title"></h1>
-    <textarea id="notes" placeholder="Tus notas se guardan automáticamente aquí..."></textarea>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Panel de Control Estelar</title>
+    <link rel="stylesheet" href="style.css">
+    
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    
+    <style>
+        /* Estilos específicos del Dashboard */
+        body { padding: 20px; }
+        .dashboard-layout { display: flex; flex-wrap: wrap; gap: 20px; max-width: 1400px; margin: auto; }
+        .sidebar { width: 300px; padding: 30px; text-align: center; flex-shrink: 0; }
+        .main-content { flex-grow: 1; display: flex; flex-direction: column; gap: 20px; min-width: 300px; }
+        
+        /* Barra de XP */
+        .progress-container { background: rgba(0,0,0,0.5); border-radius: 10px; height: 15px; margin: 20px 0; overflow: hidden; border: 1px solid var(--glass-border); }
+        .progress-fill { height: 100%; background: linear-gradient(90deg, var(--user-color, #00f2ff), #ffffff); width: 0%; transition: width 1s ease-in-out; }
+        
+        /* Botones futuristas */
+        .btn-action { 
+            background: rgba(255,255,255,0.05); border: 1px solid var(--user-color, #fff); 
+            color: white; padding: 12px 15px; border-radius: 8px; cursor: pointer; 
+            transition: 0.3s; width: 100%; margin-top: 10px; font-family: 'Rajdhani', sans-serif; font-size: 1.1em; text-transform: uppercase;
+        }
+        .btn-action:hover { background: var(--user-color, #00f2ff); color: #000; box-shadow: 0 0 15px var(--user-color, #00f2ff); font-weight: bold; }
+        
+        textarea { width: 100%; height: 150px; background: rgba(0,0,0,0.6); color: #0f0; border: 1px solid var(--glass-border); border-radius: 10px; padding: 15px; font-family: monospace; resize: none; box-sizing: border-box;}
+    </style>
+</head>
+<body>
+    <div class="dashboard-layout">
+        
+        <div class="sidebar glass-panel" id="user-theme">
+            <h2 id="u-name" style="font-family: 'Orbitron', sans-serif; margin-bottom: 5px;">Cargando...</h2>
+            <p id="u-role" style="color: #aaa; margin-top: 0; text-transform: uppercase; letter-spacing: 2px;"></p>
+            
+            <button class="btn-action" onclick="cambiarApodo()" style="padding: 5px; font-size: 0.9em; border-style: dashed;">✏️ Cambiar Apodo</button>
+            
+            <div class="progress-container">
+                <div id="xp-bar" class="progress-fill"></div>
+            </div>
+            <p id="u-pts" style="font-size: 1.5em; font-weight: bold; margin: 10px 0;">Puntos: 0</p>
+            
+            <button class="btn-action" onclick="canjearPremio()">🎁 Canjear Premio (500 pts)</button>
+            <button class="btn-action" onclick="location.href='index.html'" style="border-color: #ff0055; margin-top: 30px;">🚪 Desconectar</button>
+        </div>
+
+        <div class="main-content">
+            
+            <div class="glass-panel" style="padding: 30px; border-left: 5px solid var(--user-color, #fff);">
+                <h3 style="font-family: 'Orbitron', sans-serif; margin-top: 0;">🎯 Misión Activa</h3>
+                <p style="font-size: 1.2em;">Completar 1 hora de estudio de programación.</p>
+                <button class="btn-action" onclick="completarMision(100)" style="width: auto;">✅ Marcar Completada (+100 XP)</button>
+            </div>
+
+            <div class="glass-panel" style="padding: 30px;">
+                <h3 style="font-family: 'Orbitron', sans-serif; margin-top: 0;">📒 Bitácora Encriptada</h3>
+                <textarea id="notes" oninput="saveNotes()" placeholder="Escribe tus notas aquí..."></textarea>
+                <button class="btn-action" onclick="cipherNotes()" style="width: auto;">🔒 Encriptar/Desencriptar Datos</button>
+            </div>
+            
+        </div>
+    </div>
+
     <script>
-        const p = new URLSearchParams(window.location.search);
-        const u = p.get('user') || 'papa';
-        const names = { 'papa':'Papá Tech', 'hija':'Hija (12)', 'hijo':'Hijo (8)' };
-        document.getElementById('title').innerText = "Espacio de " + names[u];
-        const n = document.getElementById('notes');
-        n.value = localStorage.getItem('n_'+u) || "";
-        n.oninput = () => { 
-            localStorage.setItem('n_'+u, n.value);
-            if(u==='hijo') n.value = n.value.replace(':)','🌟');
+        // 1. OBTENER USUARIO Y CONFIGURACIÓN
+        const params = new URLSearchParams(window.location.search);
+        const u = params.get('u') || 'peque';
+        
+        const config = {
+            'papa':  { n: 'Papá', r: 'Comandante', p: 9999, color: 'var(--papa)' },
+            'mama':  { n: 'Mamá', r: 'Directora', p: 9999, color: 'var(--mama)' },
+            'hija':  { n: 'La Artista', r: 'Especialista', p: 200, color: 'var(--hija)' },
+            'hijo':  { n: 'Code Kid', r: 'Ingeniero', p: 350, color: 'var(--hijo)' },
+            'peque': { n: 'El Gordito', r: 'Explorador', p: 100, color: 'var(--peque)' }
         };
+
+        const current = config[u];
+        
+        // Aplicar el color Neón del usuario al Dashboard
+        document.documentElement.style.setProperty('--user-color', current.color);
+
+        // Inicializar puntos si no existen
+        if(!localStorage.getItem('pts_'+u)) localStorage.setItem('pts_'+u, current.p);
+
+        // 2. FUNCIÓN PARA ACTUALIZAR LA PANTALLA
+        function updateUI() {
+            const pts = parseInt(localStorage.getItem('pts_'+u));
+            const apodo = localStorage.getItem('apodo_'+u) || current.n;
+            
+            document.getElementById('u-name').innerText = apodo;
+            document.getElementById('u-role').innerText = current.r;
+            document.getElementById('u-pts').innerText = `XP: ${pts}`;
+            
+            // Barra de progreso (Meta: 1000 pts)
+            const percent = Math.min((pts / 1000) * 100, 100);
+            document.getElementById('xp-bar').style.width = percent + '%';
+        }
+
+        // 3. CAMBIAR APODO (Con SweetAlert2)
+        async function cambiarApodo() {
+            const { value: nuevoApodo } = await Swal.fire({
+                title: 'Nuevo Código de Identificación',
+                input: 'text',
+                inputPlaceholder: 'Ingresa tu nuevo apodo...',
+                background: '#0a0a19', color: '#fff',
+                confirmButtonColor: current.color,
+                showCancelButton: true,
+                cancelButtonText: 'Cancelar'
+            });
+
+            if (nuevoApodo && nuevoApodo.trim() !== "") {
+                localStorage.setItem('apodo_'+u, nuevoApodo);
+                updateUI();
+                Swal.fire({ title: '¡Identidad Actualizada!', icon: 'success', background: '#0a0a19', color: '#fff', confirmButtonColor: current.color });
+            }
+        }
+
+        // 4. COMPLETAR MISIÓN (Con Confetti)
+        function completarMision(puntosGanados) {
+            let ptsActuales = parseInt(localStorage.getItem('pts_'+u));
+            localStorage.setItem('pts_'+u, ptsActuales + puntosGanados);
+            
+            // Efecto visual de logro
+            confetti({ particleCount: 150, spread: 80, origin: { y: 0.6 } });
+            
+            Swal.fire({
+                title: '¡Misión Cumplida!',
+                text: `Has ganado ${puntosGanados} XP. ¡Sigue así!`,
+                icon: 'success',
+                background: '#0a0a19', color: '#fff',
+                confirmButtonColor: current.color
+            });
+            
+            updateUI();
+        }
+
+        // 5. CANJEAR PREMIO
+        function canjearPremio() {
+            let pts = parseInt(localStorage.getItem('pts_'+u));
+            if(pts >= 500) {
+                Swal.fire({
+                    title: '¿Solicitar Recompensa?',
+                    text: "Esto consumirá 500 XP de tu cuenta.",
+                    icon: 'question',
+                    showCancelButton: true,
+                    confirmButtonColor: current.color,
+                    background: '#0a0a19', color: '#fff'
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        localStorage.setItem('pts_'+u, pts - 500);
+                        confetti({ particleCount: 300, spread: 100, startVelocity: 40 });
+                        updateUI();
+                        Swal.fire({title: '¡Premio Desbloqueado!', text: 'Informa a Comandancia (Papá/Mamá) para recibirlo.', icon: 'success', background: '#0a0a19', color: '#fff'});
+                    }
+                });
+            } else {
+                Swal.fire({ title: 'Energía Insuficiente', text: `Te faltan ${500 - pts} XP para un premio.`, icon: 'warning', background: '#0a0a19', color: '#fff' });
+            }
+        }
+
+        // 6. NOTAS ENCRIPTADAS
+        function saveNotes() { localStorage.setItem('notes_'+u, document.getElementById('notes').value); }
+        document.getElementById('notes').value = localStorage.getItem('notes_'+u) || "";
+
+        function cipherNotes() {
+            const area = document.getElementById('notes');
+            try {
+                if(!area.dataset.c) {
+                    area.value = btoa(unescape(encodeURIComponent(area.value)));
+                    area.dataset.c = "1";
+                    area.style.color = "yellow";
+                } else {
+                    area.value = decodeURIComponent(escape(atob(area.value)));
+                    delete area.dataset.c;
+                    area.style.color = "#0f0";
+                }
+            } catch(e) { Swal.fire('Error', 'No se pudieron procesar los datos.', 'error'); }
+        }
+
+        // Iniciar pantalla
+        updateUI();
     </script>
 </body>
 </html>
