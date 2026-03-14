@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="../style.css">
+    <style>
+        /* Estilos propios del módulo Paint */
+        body { 
+            margin: 0; padding: 0; display: flex; flex-direction: column; 
+            height: 100vh; background: transparent; color: white; 
+            font-family: 'Rajdhani', sans-serif; box-sizing: border-box;
+        }
+        
+        .toolbar {
+            display: flex; gap: 15px; padding: 15px; flex-wrap: wrap; 
+            align-items: center; background: rgba(0,0,0,0.5); 
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .tool-btn {
+            background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.3); 
+            color: white; padding: 8px 15px; border-radius: 5px; cursor: pointer; 
+            font-family: 'Rajdhani', sans-serif; font-size: 1.1em; transition: 0.3s;
+        }
+        .tool-btn:hover, .tool-btn.active { background: #00f2ff; color: black; font-weight: bold; box-shadow: 0 0 10px #00f2ff; border-color: #00f2ff; }
+        
+        #color-picker { width: 40px; height: 40px; border: none; cursor: pointer; background: transparent; }
+        
+        .canvas-container {
+            flex-grow: 1; padding: 15px; display: flex; justify-content: center; align-items: center;
+        }
+        
+        canvas {
+            background: #05050a; border: 2px solid rgba(255,255,255,0.2); 
+            border-radius: 10px; cursor: crosshair; box-shadow: inset 0 0 20px rgba(0,0,0,0.8);
+            touch-action: none; /* Evita que la pantalla se mueva al dibujar en tablet */
+        }
+    </style>
+</head>
+<body>
+
+    <div class="toolbar">
+        <span style="font-family: 'Orbitron', sans-serif; color: #00f2ff; font-size: 1.2em; margin-right: 15px;">🎨 HERRAMIENTAS:</span>
+        
+        <input type="color" id="color-picker" value="#00f2ff" title="Elegir Color">
+        
+        <label for="brush-size">Grosor:</label>
+        <input type="range" id="brush-size" min="2" max="30" value="5">
+        
+        <button id="btn-brush" class="tool-btn active">🖌️ Pincel Neón</button>
+        <button id="btn-eraser" class="tool-btn">🧽 Borrador</button>
+        <button id="btn-clear" class="tool-btn" style="border-color: #ff0055;">🗑️ Limpiar Todo</button>
+        
+        <div style="flex-grow: 1;"></div> <button id="btn-save" class="tool-btn" style="border-color: #00ff88; color: #00ff88;">💾 Descargar y Ganar XP</button>
+    </div>
+
+    <div class="canvas-container">
+        <canvas id="pizarra"></canvas>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('pizarra');
+        const ctx = canvas.getContext('2d');
+        const container = document.querySelector('.canvas-container');
+
+        // Variables
+        let dibujando = false;
+        let modoBorrador = false;
+        let colorActual = document.getElementById('color-picker').value;
+        let grosorActual = document.getElementById('brush-size').value;
+
+        // Ajustar el tamaño del canvas al espacio disponible
+        function resizeCanvas() {
+            const tempCanvas = document.createElement('canvas');
+            tempCanvas.width = canvas.width; tempCanvas.height = canvas.height;
+            tempCanvas.getContext('2d').drawImage(canvas, 0, 0);
+
+            canvas.width = container.clientWidth - 30;
+            canvas.height = container.clientHeight - 30;
+
+            ctx.lineCap = 'round';
+            ctx.lineJoin = 'round';
+            ctx.drawImage(tempCanvas, 0, 0);
+        }
+        window.addEventListener('load', resizeCanvas);
+        window.addEventListener('resize', resizeCanvas);
+
+        // Herramientas y Botones
+        document.getElementById('color-picker').addEventListener('input', (e) => { 
+            colorActual = e.target.value; 
+            activarBoton('btn-brush');
+        });
+        document.getElementById('brush-size').addEventListener('input', (e) => { grosorActual = e.target.value; });
+        
+        document.getElementById('btn-brush').addEventListener('click', () => activarBoton('btn-brush'));
+        document.getElementById('btn-eraser').addEventListener('click', () => activarBoton('btn-eraser'));
+        
+        document.getElementById('btn-clear').addEventListener('click', () => { ctx.clearRect(0, 0, canvas.width, canvas.height); });
+
+        function activarBoton(id) {
+            document.getElementById('btn-brush').classList.remove('active');
+            document.getElementById('btn-eraser').classList.remove('active');
+            document.getElementById(id).classList.add('active');
+            modoBorrador = (id === 'btn-eraser');
+        }
+
+        // Función para guardar y DAR PUNTOS (Se comunica con dashboard.html)
+        document.getElementById('btn-save').addEventListener('click', () => {
+            // Fondo negro para la imagen guardada
+            const tempCanvas = document.createElement('canvas');
+            const tempCtx = tempCanvas.getContext('2d');
+            tempCanvas.width = canvas.width; tempCanvas.height = canvas.height;
+            tempCtx.fillStyle = '#05050a'; tempCtx.fillRect(0, 0, tempCanvas.width, tempCanvas.height);
+            tempCtx.drawImage(canvas, 0, 0);
+            
+            // Descargar
+            const link = document.createElement('a');
+            link.download = `Arte_Familiar_${new Date().getTime()}.png`;
+            link.href = tempCanvas.toDataURL();
+            link.click();
+
+            // --- MAGIA: Comunicarse con el archivo padre (dashboard) ---
+            try {
+                // Obtener usuario actual del enlace del padre
+                const parentParams = new URLSearchParams(window.parent.location.search);
+                const u = parentParams.get('u') || 'peque';
+                
+                // Sumar 10 XP en la memoria
+                let pts = parseInt(localStorage.getItem('pts_'+u)) || 0;
+                localStorage.setItem('pts_'+u, pts + 10);
+                
+                // Disparar las alertas y confeti del padre
+                if(window.parent.updateUI) window.parent.updateUI();
+                if(window.parent.confetti) window.parent.confetti({ particleCount: 150, spread: 80, origin: { y: 0.6 } });
+                if(window.parent.Swal) {
+                    window.parent.Swal.fire({ 
+                        title: '¡Obra Guardada!', text: '¡Has ganado 10 XP por tu creatividad! 🎨', 
+                        icon: 'success', background: '#0a0a19', color: '#fff' 
+                    });
+                }
+            } catch(e) { console.log("Se guardó, pero no se pudo conectar con el Dashboard principal."); }
+        });
+
+        // Eventos de Dibujo
+        function getPos(e) {
+            const rect = canvas.getBoundingClientRect();
+            // Soporta Mouse y Táctil
+            const clientX = e.clientX || (e.touches && e.touches[0].clientX);
+            const clientY = e.clientY || (e.touches && e.touches[0].clientY);
+            return { x: clientX - rect.left, y: clientY - rect.top };
+        }
+
+        function iniciarDibujo(e) {
+            dibujando = true; ctx.beginPath();
+            const pos = getPos(e); ctx.moveTo(pos.x, pos.y);
+            e.preventDefault(); // Evita scroll en tablets
+        }
+
+        function dibujar(e) {
+            if (!dibujando) return;
+            e.preventDefault();
+            const pos = getPos(e);
+            
+            ctx.lineWidth = grosorActual;
+            if (modoBorrador) {
+                ctx.globalCompositeOperation = "destination-out";
+                ctx.shadowBlur = 0;
+            } else {
+                ctx.globalCompositeOperation = "source-over";
+                ctx.strokeStyle = colorActual;
+                ctx.shadowColor = colorActual;
+                ctx.shadowBlur = grosorActual * 2; // EFECTO NEÓN
+            }
+            
+            ctx.lineTo(pos.x, pos.y); ctx.stroke();
+        }
+
+        function detenerDibujo() { dibujando = false; }
+
+        // Mouse
+        canvas.addEventListener('mousedown', iniciarDibujo);
+        canvas.addEventListener('mousemove', dibujar);
+        canvas.addEventListener('mouseup', detenerDibujo);
+        canvas.addEventListener('mouseout', detenerDibujo);
+
+        // Touch (Celulares/Tablets)
+        canvas.addEventListener('touchstart', iniciarDibujo, {passive: false});
+        canvas.addEventListener('touchmove', dibujar, {passive: false});
+        canvas.addEventListener('touchend', detenerDibujo);
+    </script>
+</body>
+</html>

@@ -5,72 +5,65 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Panel de Control Estelar</title>
     <link rel="stylesheet" href="style.css">
-    
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
-    
     <style>
-        /* Estilos específicos del Dashboard */
-        body { padding: 20px; }
-        .dashboard-layout { display: flex; flex-wrap: wrap; gap: 20px; max-width: 1400px; margin: auto; }
-        .sidebar { width: 300px; padding: 30px; text-align: center; flex-shrink: 0; }
-        .main-content { flex-grow: 1; display: flex; flex-direction: column; gap: 20px; min-width: 300px; }
+        body { margin: 0; padding: 0; min-height: 100vh; overflow: hidden; background: var(--bg-color); }
+        .dashboard-layout { display: flex; height: 100vh; width: 100%; }
+        .sidebar { width: 300px; padding: 30px 20px; text-align: center; border-right: 1px solid var(--glass-border); background: var(--glass-bg); backdrop-filter: blur(12px); display: flex; flex-direction: column; flex-shrink: 0; z-index: 10; overflow-y: auto; }
+        .main-content { flex-grow: 1; padding: 20px; display: flex; flex-direction: column; height: 100vh; box-sizing: border-box; }
+        .visor-holografico { flex-grow: 1; border: 2px solid var(--user-color); border-radius: 15px; background: rgba(0,0,0,0.4); box-shadow: inset 0 0 30px rgba(0,0,0,0.8); overflow: hidden; }
         
-        /* Barra de XP */
-        .progress-container { background: rgba(0,0,0,0.5); border-radius: 10px; height: 15px; margin: 20px 0; overflow: hidden; border: 1px solid var(--glass-border); }
+        /* Ocultar barra de scroll en el sidebar para que se vea limpio */
+        .sidebar::-webkit-scrollbar { display: none; }
+        .sidebar { -ms-overflow-style: none; scrollbar-width: none; }
+
+        .nav-btn { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.2); color: white; padding: 12px; border-radius: 8px; cursor: pointer; transition: 0.3s; width: 100%; margin-bottom: 8px; font-family: 'Rajdhani', sans-serif; font-size: 1.1em; text-transform: uppercase; display: flex; align-items: center; justify-content: left; gap: 10px; }
+        .nav-btn:hover, .nav-btn.active { background: rgba(255,255,255,0.1); border-color: var(--user-color); box-shadow: 0 0 15px var(--user-color); color: var(--user-color); font-weight: bold; transform: translateX(5px); }
+        .progress-container { background: rgba(0,0,0,0.6); border-radius: 10px; height: 15px; margin: 15px 0; border: 1px solid var(--glass-border); }
         .progress-fill { height: 100%; background: linear-gradient(90deg, var(--user-color, #00f2ff), #ffffff); width: 0%; transition: width 1s ease-in-out; }
-        
-        /* Botones futuristas */
-        .btn-action { 
-            background: rgba(255,255,255,0.05); border: 1px solid var(--user-color, #fff); 
-            color: white; padding: 12px 15px; border-radius: 8px; cursor: pointer; 
-            transition: 0.3s; width: 100%; margin-top: 10px; font-family: 'Rajdhani', sans-serif; font-size: 1.1em; text-transform: uppercase;
-        }
-        .btn-action:hover { background: var(--user-color, #00f2ff); color: #000; box-shadow: 0 0 15px var(--user-color, #00f2ff); font-weight: bold; }
-        
-        textarea { width: 100%; height: 150px; background: rgba(0,0,0,0.6); color: #0f0; border: 1px solid var(--glass-border); border-radius: 10px; padding: 15px; font-family: monospace; resize: none; box-sizing: border-box;}
+        .seccion-titulo { color: #aaa; font-size: 0.8em; text-align: left; margin-top: 15px; margin-bottom: 5px; text-transform: uppercase; letter-spacing: 1px; }
     </style>
 </head>
 <body>
     <div class="dashboard-layout">
         
-        <div class="sidebar glass-panel" id="user-theme">
-            <h2 id="u-name" style="font-family: 'Orbitron', sans-serif; margin-bottom: 5px;">Cargando...</h2>
-            <p id="u-role" style="color: #aaa; margin-top: 0; text-transform: uppercase; letter-spacing: 2px;"></p>
+        <div class="sidebar" id="user-theme">
+            <h2 id="u-name" style="font-family: 'Orbitron', sans-serif; font-size: 1.8em; margin: 0 0 5px 0;">Cargando...</h2>
+            <p id="u-role" style="color: #aaa; margin: 0 0 15px 0; font-size: 0.9em; text-transform: uppercase; letter-spacing: 2px;"></p>
             
-            <button class="btn-action" onclick="cambiarApodo()" style="padding: 5px; font-size: 0.9em; border-style: dashed;">✏️ Cambiar Apodo</button>
+            <div class="progress-container"><div id="xp-bar" class="progress-fill"></div></div>
+            <p id="u-pts" style="font-size: 1.5em; font-family: 'Orbitron', sans-serif; margin: 5px 0 15px 0; text-shadow: 0 0 10px var(--user-color);">XP: 0</p>
+            <hr style="border: 1px solid rgba(255,255,255,0.1); width: 100%; margin-bottom: 10px;">
             
-            <div class="progress-container">
-                <div id="xp-bar" class="progress-fill"></div>
+            <p class="seccion-titulo">🎨 Estudios de Arte</p>
+            <button id="btn-paint-clasico" class="nav-btn active" onclick="cambiarModulo('modulos/paint_clasico.html', 'btn-paint-clasico')">🖌️ Paint Clásico</button>
+            <button id="btn-paint-pro" class="nav-btn" onclick="cambiarModulo('modulos/paint_pro.html', 'btn-paint-pro')">✨ Kleki (Avanzado)</button>
+            <button id="btn-pixel-art" class="nav-btn" onclick="cambiarModulo('modulos/pixel_art.html', 'btn-pixel-art')">👾 Creador Pixel Art</button>
+            <button id="btn-anime" class="nav-btn" onclick="cambiarModulo('modulos/anime_creator.html', 'btn-anime')" style="border-color: #00ff88; color: #00ff88;">🌸 Creador Anime</button>
+            
+            <p class="seccion-titulo">🎵 Laboratorios</p>
+            <button id="btn-musica" class="nav-btn" onclick="cambiarModulo('modulos/musica.html', 'btn-musica')" style="border-color: #b000ff; color: #b000ff;">🎹 Sintetizador</button>
+
+            <p class="seccion-titulo">🕹️ Retos y Juegos</p>
+            <button id="btn-arcade" class="nav-btn" onclick="cambiarModulo('modulos/arcade.html', 'btn-arcade')" style="border-color: #ff0055; color: #ff0055;">🎮 Mega Arcade</button>
+            <button id="btn-puzzle" class="nav-btn" onclick="cambiarModulo('modulos/puzzle.html', 'btn-puzzle')">🧩 Rompecabezas</button>
+            
+            <button class="nav-btn" onclick="canjearPremio()" style="margin-top: 25px; border-color: gold; color: gold;">🎁 Tienda de Recompensas</button>
+            
+            <div style="margin-top: 20px;">
+                <button class="nav-btn" onclick="location.href='index.html'" style="border-color: #ff0055; color: #ff0055; justify-content: center;">🚪 Desconectar</button>
             </div>
-            <p id="u-pts" style="font-size: 1.5em; font-weight: bold; margin: 10px 0;">Puntos: 0</p>
-            
-            <button class="btn-action" onclick="canjearPremio()">🎁 Canjear Premio (500 pts)</button>
-            <button class="btn-action" onclick="location.href='index.html'" style="border-color: #ff0055; margin-top: 30px;">🚪 Desconectar</button>
         </div>
 
         <div class="main-content">
-            
-            <div class="glass-panel" style="padding: 30px; border-left: 5px solid var(--user-color, #fff);">
-                <h3 style="font-family: 'Orbitron', sans-serif; margin-top: 0;">🎯 Misión Activa</h3>
-                <p style="font-size: 1.2em;">Completar 1 hora de estudio de programación.</p>
-                <button class="btn-action" onclick="completarMision(100)" style="width: auto;">✅ Marcar Completada (+100 XP)</button>
-            </div>
-
-            <div class="glass-panel" style="padding: 30px;">
-                <h3 style="font-family: 'Orbitron', sans-serif; margin-top: 0;">📒 Bitácora Encriptada</h3>
-                <textarea id="notes" oninput="saveNotes()" placeholder="Escribe tus notas aquí..."></textarea>
-                <button class="btn-action" onclick="cipherNotes()" style="width: auto;">🔒 Encriptar/Desencriptar Datos</button>
-            </div>
-            
+            <iframe class="visor-holografico" src="modulos/paint_clasico.html" frameborder="0" width="100%" height="100%"></iframe>
         </div>
     </div>
 
     <script>
-        // 1. OBTENER USUARIO Y CONFIGURACIÓN
         const params = new URLSearchParams(window.location.search);
         const u = params.get('u') || 'peque';
-        
         const config = {
             'papa':  { n: 'Papá', r: 'Comandante', p: 9999, color: 'var(--papa)' },
             'mama':  { n: 'Mamá', r: 'Directora', p: 9999, color: 'var(--mama)' },
@@ -80,109 +73,29 @@
         };
 
         const current = config[u];
-        
-        // Aplicar el color Neón del usuario al Dashboard
         document.documentElement.style.setProperty('--user-color', current.color);
-
-        // Inicializar puntos si no existen
         if(!localStorage.getItem('pts_'+u)) localStorage.setItem('pts_'+u, current.p);
 
-        // 2. FUNCIÓN PARA ACTUALIZAR LA PANTALLA
         function updateUI() {
             const pts = parseInt(localStorage.getItem('pts_'+u));
             const apodo = localStorage.getItem('apodo_'+u) || current.n;
-            
             document.getElementById('u-name').innerText = apodo;
             document.getElementById('u-role').innerText = current.r;
             document.getElementById('u-pts').innerText = `XP: ${pts}`;
-            
-            // Barra de progreso (Meta: 1000 pts)
-            const percent = Math.min((pts / 1000) * 100, 100);
-            document.getElementById('xp-bar').style.width = percent + '%';
+            document.getElementById('xp-bar').style.width = Math.min((pts / 1000) * 100, 100) + '%';
         }
 
-        // 3. CAMBIAR APODO (Con SweetAlert2)
-        async function cambiarApodo() {
-            const { value: nuevoApodo } = await Swal.fire({
-                title: 'Nuevo Código de Identificación',
-                input: 'text',
-                inputPlaceholder: 'Ingresa tu nuevo apodo...',
-                background: '#0a0a19', color: '#fff',
-                confirmButtonColor: current.color,
-                showCancelButton: true,
-                cancelButtonText: 'Cancelar'
-            });
-
-            if (nuevoApodo && nuevoApodo.trim() !== "") {
-                localStorage.setItem('apodo_'+u, nuevoApodo);
-                updateUI();
-                Swal.fire({ title: '¡Identidad Actualizada!', icon: 'success', background: '#0a0a19', color: '#fff', confirmButtonColor: current.color });
-            }
+        function cambiarModulo(ruta, idBoton) {
+            document.querySelector('.visor-holografico').src = ruta;
+            const botones = document.querySelectorAll('.nav-btn');
+            botones.forEach(btn => btn.classList.remove('active'));
+            document.getElementById(idBoton).classList.add('active');
         }
 
-        // 4. COMPLETAR MISIÓN (Con Confetti)
-        function completarMision(puntosGanados) {
-            let ptsActuales = parseInt(localStorage.getItem('pts_'+u));
-            localStorage.setItem('pts_'+u, ptsActuales + puntosGanados);
-            
-            // Efecto visual de logro
-            confetti({ particleCount: 150, spread: 80, origin: { y: 0.6 } });
-            
-            Swal.fire({
-                title: '¡Misión Cumplida!',
-                text: `Has ganado ${puntosGanados} XP. ¡Sigue así!`,
-                icon: 'success',
-                background: '#0a0a19', color: '#fff',
-                confirmButtonColor: current.color
-            });
-            
-            updateUI();
-        }
-
-        // 5. CANJEAR PREMIO
         function canjearPremio() {
-            let pts = parseInt(localStorage.getItem('pts_'+u));
-            if(pts >= 500) {
-                Swal.fire({
-                    title: '¿Solicitar Recompensa?',
-                    text: "Esto consumirá 500 XP de tu cuenta.",
-                    icon: 'question',
-                    showCancelButton: true,
-                    confirmButtonColor: current.color,
-                    background: '#0a0a19', color: '#fff'
-                }).then((result) => {
-                    if (result.isConfirmed) {
-                        localStorage.setItem('pts_'+u, pts - 500);
-                        confetti({ particleCount: 300, spread: 100, startVelocity: 40 });
-                        updateUI();
-                        Swal.fire({title: '¡Premio Desbloqueado!', text: 'Informa a Comandancia (Papá/Mamá) para recibirlo.', icon: 'success', background: '#0a0a19', color: '#fff'});
-                    }
-                });
-            } else {
-                Swal.fire({ title: 'Energía Insuficiente', text: `Te faltan ${500 - pts} XP para un premio.`, icon: 'warning', background: '#0a0a19', color: '#fff' });
-            }
+            Swal.fire({ title: 'Tienda de Recompensas', text: '¡Pronto agregaremos los premios reales!', icon: 'info', background: '#0a0a19', color: '#fff', confirmButtonColor: current.color });
         }
 
-        // 6. NOTAS ENCRIPTADAS
-        function saveNotes() { localStorage.setItem('notes_'+u, document.getElementById('notes').value); }
-        document.getElementById('notes').value = localStorage.getItem('notes_'+u) || "";
-
-        function cipherNotes() {
-            const area = document.getElementById('notes');
-            try {
-                if(!area.dataset.c) {
-                    area.value = btoa(unescape(encodeURIComponent(area.value)));
-                    area.dataset.c = "1";
-                    area.style.color = "yellow";
-                } else {
-                    area.value = decodeURIComponent(escape(atob(area.value)));
-                    delete area.dataset.c;
-                    area.style.color = "#0f0";
-                }
-            } catch(e) { Swal.fire('Error', 'No se pudieron procesar los datos.', 'error'); }
-        }
-
-        // Iniciar pantalla
         updateUI();
     </script>
 </body>

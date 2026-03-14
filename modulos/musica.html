@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <link rel="stylesheet" href="../style.css">
+    <style>
+        body { margin: 0; background: #05050a; color: white; font-family: 'Rajdhani', sans-serif; display: flex; flex-direction: column; height: 100vh; overflow: hidden; user-select: none; -webkit-user-select: none; }
+        
+        .header { background: rgba(0,0,0,0.8); padding: 15px; display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #b000ff; }
+        .contador-notas { background: #111; border: 1px solid #b000ff; color: #b000ff; padding: 5px 15px; border-radius: 20px; font-family: 'Orbitron', sans-serif; }
+        
+        /* El grid del Launchpad (Ideal para celulares) */
+        .pad-container { flex-grow: 1; display: grid; grid-template-columns: repeat(3, 1fr); grid-template-rows: repeat(4, 1fr); gap: 15px; padding: 20px; max-width: 600px; margin: 0 auto; width: 100%; box-sizing: border-box; }
+        
+        /* Los botones musicales */
+        .pad-btn { 
+            background: rgba(20, 20, 30, 0.8); border: 2px solid; border-radius: 15px; 
+            box-shadow: inset 0 0 15px rgba(0,0,0,0.8); cursor: pointer; transition: 0.1s;
+            display: flex; justify-content: center; align-items: center; font-size: 2em;
+            touch-action: manipulation; /* Evita zoom accidental en celulares */
+        }
+        
+        /* Efecto cuando lo tocan */
+        .pad-btn:active, .pad-btn.tocado { transform: scale(0.95); filter: brightness(1.5); }
+        
+        /* Colores Neón por filas */
+        .fila-1 { border-color: #00f2ff; color: #00f2ff; text-shadow: 0 0 10px #00f2ff; box-shadow: 0 0 10px rgba(0,242,255,0.3); }
+        .fila-2 { border-color: #00ff88; color: #00ff88; text-shadow: 0 0 10px #00ff88; box-shadow: 0 0 10px rgba(0,255,136,0.3); }
+        .fila-3 { border-color: #fdbb2d; color: #fdbb2d; text-shadow: 0 0 10px #fdbb2d; box-shadow: 0 0 10px rgba(253,187,45,0.3); }
+        .fila-4 { border-color: #ff0055; color: #ff0055; text-shadow: 0 0 10px #ff0055; box-shadow: 0 0 10px rgba(255,0,85,0.3); }
+    </style>
+</head>
+<body>
+
+    <div class="header">
+        <span style="font-family:'Orbitron',sans-serif; font-size: 1.2em;">🎹 Sintetizador Cuántico</span>
+        <div class="contador-notas">Notas: <span id="num-notas">0</span>/50</div>
+    </div>
+
+    <div class="pad-container">
+        <div class="pad-btn fila-1" data-freq="261.63">C</div>
+        <div class="pad-btn fila-1" data-freq="293.66">D</div>
+        <div class="pad-btn fila-1" data-freq="329.63">E</div>
+        
+        <div class="pad-btn fila-2" data-freq="392.00">G</div>
+        <div class="pad-btn fila-2" data-freq="440.00">A</div>
+        <div class="pad-btn fila-2" data-freq="523.25">C2</div>
+        
+        <div class="pad-btn fila-3" data-freq="587.33">D2</div>
+        <div class="pad-btn fila-3" data-freq="659.25">E2</div>
+        <div class="pad-btn fila-3" data-freq="783.99">G2</div>
+        
+        <div class="pad-btn fila-4" data-type="kick">🥁</div>
+        <div class="pad-btn fila-4" data-type="snare">💥</div>
+        <div class="pad-btn fila-4" data-type="hihat">✨</div>
+    </div>
+
+    <script>
+        // Inicializar el motor de audio del navegador
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        let audioCtx;
+        let notasTocadas = 0;
+        let premioEntregado = false;
+
+        function iniciarAudio() {
+            if (!audioCtx) audioCtx = new AudioContext();
+        }
+
+        // Función para tocar una nota musical (Sintetizador)
+        function tocarNota(frecuencia, boton) {
+            iniciarAudio();
+            const oscilador = audioCtx.createOscillator();
+            const ganancia = audioCtx.createGain();
+            
+            oscilador.type = 'triangle'; // Sonido electrónico retro
+            oscilador.frequency.setValueAtTime(frecuencia, audioCtx.currentTime);
+            
+            // Efecto de desvanecimiento para que no suene golpeado
+            ganancia.gain.setValueAtTime(0.5, audioCtx.currentTime);
+            ganancia.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.5);
+            
+            oscilador.connect(ganancia);
+            ganancia.connect(audioCtx.destination);
+            
+            oscilador.start();
+            oscilador.stop(audioCtx.currentTime + 0.5);
+            
+            animarBoton(boton);
+            contarNota();
+        }
+
+        // Función para los sonidos de batería
+        function tocarBateria(tipo, boton) {
+            iniciarAudio();
+            const osc = audioCtx.createOscillator();
+            const ganancia = audioCtx.createGain();
+            osc.connect(ganancia);
+            ganancia.connect(audioCtx.destination);
+
+            if (tipo === 'kick') { // Bombo profundo
+                osc.frequency.setValueAtTime(150, audioCtx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.5);
+                ganancia.gain.setValueAtTime(1, audioCtx.currentTime);
+                ganancia.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.5);
+                osc.start(); osc.stop(audioCtx.currentTime + 0.5);
+            } else if (tipo === 'snare') { // Tarola / Ruido
+                osc.type = 'square';
+                osc.frequency.setValueAtTime(250, audioCtx.currentTime);
+                ganancia.gain.setValueAtTime(0.5, audioCtx.currentTime);
+                ganancia.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.2);
+                osc.start(); osc.stop(audioCtx.currentTime + 0.2);
+            } else if (tipo === 'hihat') { // Platillo agudo
+                osc.type = 'square';
+                osc.frequency.setValueAtTime(1000, audioCtx.currentTime);
+                ganancia.gain.setValueAtTime(0.1, audioCtx.currentTime);
+                ganancia.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.1);
+                osc.start(); osc.stop(audioCtx.currentTime + 0.1);
+            }
+            
+            animarBoton(boton);
+            contarNota();
+        }
+
+        function animarBoton(boton) {
+            boton.classList.add('tocado');
+            setTimeout(() => boton.classList.remove('tocado'), 100);
+        }
+
+        // Sistema de recompensas
+        function contarNota() {
+            if (premioEntregado) return;
+            notasTocadas++;
+            document.getElementById('num-notas').innerText = notasTocadas;
+            
+            if (notasTocadas >= 50) {
+                premioEntregado = true;
+                try {
+                    const u = new URLSearchParams(window.parent.location.search).get('u') || 'peque';
+                    let pts = parseInt(localStorage.getItem('pts_'+u)) || 0;
+                    localStorage.setItem('pts_'+u, pts + 30);
+                    
+                    if(window.parent.updateUI) window.parent.updateUI();
+                    if(window.parent.confetti) window.parent.confetti({particleCount: 200, spread: 100});
+                    if(window.parent.Swal) window.parent.Swal.fire('¡Disco de Platino!', 'Has compuesto una gran melodía. +30 XP', 'success');
+                } catch(e) {}
+            }
+        }
+
+        // Asignar eventos a todos los botones (Soporta toque de celular y mouse)
+        document.querySelectorAll('.pad-btn').forEach(btn => {
+            // Usamos 'touchstart' porque en celulares responde INSTANTÁNEAMENTE, sin el retraso del clic
+            btn.addEventListener('touchstart', (e) => {
+                e.preventDefault(); // Evita que la pantalla haga scroll al tocar rápido
+                if(btn.dataset.freq) tocarNota(parseFloat(btn.dataset.freq), btn);
+                if(btn.dataset.type) tocarBateria(btn.dataset.type, btn);
+            }, {passive: false});
+
+            // Soporte para PC con el mouse
+            btn.addEventListener('mousedown', () => {
+                if(btn.dataset.freq) tocarNota(parseFloat(btn.dataset.freq), btn);
+                if(btn.dataset.type) tocarBateria(btn.dataset.type, btn);
+            });
+        });
+    </script>
+</body>
+</html>

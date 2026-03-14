@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" href="../style.css">
+    <style>
+        body { margin: 0; background: #05050a; color: white; font-family: 'Rajdhani', sans-serif; text-align: center; padding: 20px; overflow-y: auto; }
+        h1 { font-family: 'Orbitron', sans-serif; color: #fdbb2d; text-shadow: 0 0 15px rgba(253, 187, 45, 0.5); margin-top: 0; }
+        
+        .btn-upload { background: rgba(253, 187, 45, 0.2); border: 2px solid #fdbb2d; color: #fdbb2d; padding: 12px 25px; border-radius: 8px; cursor: pointer; font-family: 'Orbitron', sans-serif; font-size: 1.1em; transition: 0.3s; margin-bottom: 20px; }
+        .btn-upload:hover { background: #fdbb2d; color: black; box-shadow: 0 0 20px #fdbb2d; }
+        
+        /* El tablero del rompecabezas */
+        #tablero { 
+            display: grid; 
+            grid-template-columns: repeat(3, 100px); 
+            gap: 2px; 
+            justify-content: center; 
+            margin: 20px auto; 
+            width: fit-content;
+            padding: 5px;
+            background: rgba(255,255,255,0.1);
+            border: 2px solid #333;
+            border-radius: 10px;
+        }
+        
+        /* Cada pedacito de la imagen */
+        .pieza { 
+            width: 100px; height: 100px; 
+            background-size: 300px 300px; 
+            cursor: pointer; 
+            border: 1px solid rgba(0,0,0,0.5);
+            transition: transform 0.2s;
+        }
+        
+        /* Efecto cuando tocan una pieza para moverla */
+        .seleccionada { 
+            border: 3px solid #00f2ff; 
+            transform: scale(1.1); 
+            z-index: 10; 
+            box-shadow: 0 0 15px #00f2ff; 
+        }
+    </style>
+</head>
+<body>
+
+    <h1>🧩 Fábrica de Rompecabezas</h1>
+    <p style="color: #aaa; font-size: 1.2em;">Sube una foto familiar o uno de tus dibujos, ¡ármalo y gana <strong>50 XP</strong>!</p>
+    
+    <input type="file" id="file-input" accept="image/*" style="display: none;">
+    <button class="btn-upload" onclick="document.getElementById('file-input').click()">📁 Cargar Imagen de mi PC</button>
+
+    <div id="tablero">
+        <p style="grid-column: span 3; color: #555; padding: 50px 0;">Esperando una imagen...</p>
+    </div>
+
+    <script>
+        const tablero = document.getElementById('tablero');
+        let piezas = [];
+        let piezaSeleccionada = null;
+
+        // 1. Cuando el niño elige una foto de la computadora
+        document.getElementById('file-input').addEventListener('change', function(e) {
+            const archivo = e.target.files[0];
+            if (!archivo) return;
+            
+            const lector = new FileReader();
+            lector.onload = function(evento) {
+                const img = new Image();
+                img.onload = function() { crearRompecabezas(img.src); }
+                img.src = evento.target.result;
+            }
+            lector.readAsDataURL(archivo);
+        });
+
+        // 2. Cortar la imagen y desordenarla
+        function crearRompecabezas(imagenSrc) {
+            tablero.innerHTML = ''; // Limpiamos el tablero
+            piezas = [];
+            
+            // Creamos un arreglo del 0 al 8 (las 9 piezas) y lo desordenamos
+            let posiciones = [0, 1, 2, 3, 4, 5, 6, 7, 8];
+            posiciones.sort(() => Math.random() - 0.5); 
+
+            for(let i = 0; i < 9; i++) {
+                let pedacito = document.createElement('div');
+                pedacito.className = 'pieza';
+                pedacito.style.backgroundImage = `url(${imagenSrc})`;
+
+                // Calcular qué pedazo de la foto le toca a esta pieza desordenada
+                let indiceDesordenado = posiciones[i];
+                let xCorrecta = (indiceDesordenado % 3) * 100;
+                let yCorrecta = Math.floor(indiceDesordenado / 3) * 100;
+
+                pedacito.style.backgroundPosition = `-${xCorrecta}px -${yCorrecta}px`;
+                
+                // Guardamos sus datos secretos para saber si ganaron
+                pedacito.dataset.indiceCorrecto = indiceDesordenado;
+                
+                // Evento de clic para jugar
+                pedacito.addEventListener('click', () => tocarPieza(pedacito));
+                
+                tablero.appendChild(pedacito);
+                piezas.push(pedacito);
+            }
+        }
+
+        // 3. Lógica del juego: Tocar para intercambiar lugares
+        function tocarPieza(pedacito) {
+            if(!piezaSeleccionada) {
+                // Primer toque
+                piezaSeleccionada = pedacito;
+                pedacito.classList.add('seleccionada');
+            } else {
+                // Segundo toque: ¡Intercambio de imágenes!
+                let tempFondo = piezaSeleccionada.style.backgroundPosition;
+                let tempCorrecto = piezaSeleccionada.dataset.indiceCorrecto;
+
+                piezaSeleccionada.style.backgroundPosition = pedacito.style.backgroundPosition;
+                piezaSeleccionada.dataset.indiceCorrecto = pedacito.dataset.indiceCorrecto;
+
+                pedacito.style.backgroundPosition = tempFondo;
+                pedacito.dataset.indiceCorrecto = tempCorrecto;
+
+                piezaSeleccionada.classList.remove('seleccionada');
+                piezaSeleccionada = null;
+
+                // Verificamos si ya ganaron
+                verificarVictoria();
+            }
+        }
+
+        // 4. Comprobar si todas las piezas están en su lugar
+        function verificarVictoria() {
+            let ganaste = true;
+            piezas.forEach((p, indiceActual) => {
+                if(parseInt(p.dataset.indiceCorrecto) !== indiceActual) ganaste = false;
+            });
+
+            if(ganaste) {
+                setTimeout(() => {
+                    // Magia de recompensas conectada a tu Dashboard
+                    try {
+                        const u = new URLSearchParams(window.parent.location.search).get('u') || 'peque';
+                        let pts = parseInt(localStorage.getItem('pts_'+u)) || 0;
+                        localStorage.setItem('pts_'+u, pts + 50); // ¡Premio gordo!
+                        
+                        if(window.parent.updateUI) window.parent.updateUI();
+                        if(window.parent.confetti) window.parent.confetti({particleCount: 300, spread: 100, origin: { y: 0.6 }});
+                        if(window.parent.Swal) window.parent.Swal.fire({title: '¡Mente Brillante!', text: '¡Armaste la foto! Has ganado 50 XP.', icon: 'success', background: '#0a0a19', color: '#fff'});
+                    } catch(e) {}
+                }, 300); // Pequeña pausa para que vean la imagen completa antes de la alerta
+            }
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="es"><head><meta charset="UTF-8"><link rel="stylesheet" href="../style.css">
+<style>
+    body { margin: 0; padding: 30px; background: #05050a; color: white; font-family: 'Rajdhani', sans-serif; overflow-y: auto; }
+    h1 { font-family: 'Orbitron', sans-serif; color: #fdbb2d; text-align: center; font-size: 3em; text-shadow: 0 0 20px #fdbb2d; margin-top: 0; }
+    .grid-juegos { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 20px; margin-top: 30px; }
+    .card-juego { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.2); border-radius: 15px; padding: 20px; text-align: center; cursor: pointer; transition: 0.3s; }
+    .card-juego:hover { transform: translateY(-5px) scale(1.02); background: rgba(255,255,255,0.1); border-color: var(--user-color, #00f2ff); box-shadow: 0 10px 30px rgba(0,242,255,0.3); }
+    .card-juego i { font-size: 3.5em; display: block; margin-bottom: 10px; filter: drop-shadow(0 0 10px currentColor); }
+    .costo { display: inline-block; background: rgba(0,0,0,0.5); padding: 5px 15px; border-radius: 20px; color: #ffaa00; font-weight: bold; margin-top: 10px; }
+</style>
+</head><body>
+    <h1>🕹️ MEGA ARCADE</h1>
+    <p style="text-align: center; font-size: 1.2em; color: #aaa;">Elige tu aventura. Costo de entrada: <strong>20 XP</strong></p>
+
+    <div class="grid-juegos">
+        
+        <div class="card-juego" onclick="jugar('emulador.html')" style="color: #ff0055;">
+            <i>👾</i><h3>Consola Retro</h3><p>Juegos de Archivo</p>
+            <span class="costo">-20 XP</span>
+        </div>
+
+        <div class="card-juego" onclick="jugar('flappy.html')" style="color: #00f2ff;">
+            <i>🐦</i><h3>Pájaro Volador</h3><p>No choques los tubos</p>
+            <span class="costo">-20 XP</span>
+        </div>
+
+        <div class="card-juego" onclick="jugar('pacman.html')" style="color: #fdbb2d;">
+            <i>🟡</i><h3>Comecocos</h3><p>Escapa de los fantasmas</p>
+            <span class="costo">-20 XP</span>
+        </div>
+
+        <div class="card-juego" onclick="jugar('juego2048.html')" style="color: #ff0055;">
+            <i>🔢</i><h3>Fusión 2048</h3><p>Juego de Lógica</p>
+            <span class="costo">-20 XP</span>
+        </div>
+
+        <div class="card-juego" onclick="jugar('hextris.html')" style="color: #00ff88;">
+            <i>🛑</i><h3>Hextris Neón</h3><p>Rotar y encajar</p>
+            <span class="costo">-20 XP</span>
+        </div>
+
+        <div class="card-juego" onclick="jugar('runner.html')" style="color: #b000ff;">
+            <i>🏃‍♂️</i><h3>Carrera 3D</h3><p>Surfista Urbano</p>
+            <span class="costo">-20 XP</span>
+        </div>
+
+    </div>
+
+    <script>
+        function jugar(archivo) {
+            try {
+                const u = new URLSearchParams(window.parent.location.search).get('u') || 'peque';
+                let pts = parseInt(localStorage.getItem('pts_'+u)) || 0;
+                
+                if(pts >= 20) {
+                    localStorage.setItem('pts_'+u, pts - 20);
+                    if(window.parent.updateUI) window.parent.updateUI();
+                    window.location.href = archivo;
+                } else {
+                    if(window.parent.Swal) window.parent.Swal.fire('Energía Baja', `Necesitas 20 XP. Te faltan ${20-pts} XP.`, 'warning');
+                }
+            } catch(e) { window.location.href = archivo; } 
+        }
+    </script>
+</body></html>

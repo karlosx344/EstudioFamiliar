@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="es"><head><meta charset="UTF-8"><link rel="stylesheet" href="../style.css">
+<style>
+    body { margin: 0; padding: 30px; background: #05050a; color: white; font-family: 'Rajdhani', sans-serif; overflow-y: auto; height: 100vh; box-sizing: border-box; }
+    h1 { font-family: 'Orbitron', sans-serif; color: #00f2ff; text-align: center; font-size: 3em; text-shadow: 0 0 20px #00f2ff; margin-top: 0; }
+    
+    .grid-libros { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 25px; margin-top: 30px; padding-bottom: 50px; }
+    
+    .card-libro { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.2); border-radius: 10px; padding: 15px; text-align: center; cursor: pointer; transition: 0.3s; display: flex; flex-direction: column; justify-content: space-between; }
+    .card-libro:hover { transform: translateY(-10px); background: rgba(0,242,255,0.1); border-color: #00f2ff; box-shadow: 0 10px 20px rgba(0,242,255,0.3); }
+    
+    .portada { font-size: 4em; display: block; margin-bottom: 10px; }
+    .titulo-libro { font-size: 1.2em; font-weight: bold; margin: 10px 0; color: #fff; }
+    .categoria { font-size: 0.9em; color: #aaa; margin-bottom: 15px; }
+    
+    .btn-leer { background: #00f2ff; color: black; border: none; padding: 10px; border-radius: 5px; font-weight: bold; font-family: 'Orbitron', sans-serif; cursor: pointer; transition: 0.2s; }
+    .card-libro:hover .btn-leer { box-shadow: 0 0 15px #00f2ff; }
+
+    /* LECTOR DE PDF (Oculto al inicio) */
+    #zona-lector { display: none; flex-direction: column; height: 100%; }
+    .barra-lector { background: #111; padding: 15px; display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #00f2ff; }
+    .btn-volver { background: #ff0055; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; font-family: 'Orbitron', sans-serif; font-weight: bold; }
+    .btn-xp { background: rgba(0, 255, 136, 0.2); border: 1px solid #00ff88; color: #00ff88; padding: 10px 20px; border-radius: 5px; cursor: pointer; font-family: 'Orbitron', sans-serif; font-weight: bold; transition: 0.3s; }
+    .btn-xp:hover { background: #00ff88; color: black; box-shadow: 0 0 15px #00ff88; }
+    #visor-pdf { flex-grow: 1; border: none; width: 100%; background: white; }
+    #menu-biblioteca { height: 100%; }
+</style>
+</head><body>
+
+    <div id="menu-biblioteca">
+        <h1>📚 BIBLIOTECA HOLOGRÁFICA</h1>
+        <p style="text-align: center; font-size: 1.2em; color: #aaa;">Aprende, lee y gana experiencia.</p>
+
+        <div class="grid-libros">
+            
+            <div class="card-libro" onclick="abrirLibro('aprende_a_escribir.pdf', 'Aprende a Escribir', 30)">
+                <div>
+                    <span class="portada">✍️</span>
+                    <div class="titulo-libro">Aprende a Escribir</div>
+                    <div class="categoria">Caligrafía y Trazos</div>
+                </div>
+                <button class="btn-leer">📖 ABRIR</button>
+            </div>
+
+            <div class="card-libro" onclick="abrirLibro('colorear_dinosaurios.pdf', 'Colorear Dinosaurios', 20)">
+                <div>
+                    <span class="portada">🦖</span>
+                    <div class="titulo-libro">Dinosaurios Mágicos</div>
+                    <div class="categoria">Arte y Colorear</div>
+                </div>
+                <button class="btn-leer">📖 ABRIR</button>
+            </div>
+
+            <div class="card-libro" onclick="abrirLibro('cuento_espacial.pdf', 'El Viaje a Marte', 40)">
+                <div>
+                    <span class="portada">🚀</span>
+                    <div class="titulo-libro">El Pequeño Astronauta</div>
+                    <div class="categoria">Cuentos de Aventura</div>
+                </div>
+                <button class="btn-leer">📖 ABRIR</button>
+            </div>
+
+        </div>
+    </div>
+
+    <div id="zona-lector">
+        <div class="barra-lector">
+            <button class="btn-volver" onclick="cerrarLibro()">⬅️ VOLVER A LA BIBLIOTECA</button>
+            <span id="titulo-lector" style="font-family: 'Orbitron', sans-serif; font-size: 1.2em; color: white;">Cargando...</span>
+            <button id="btn-reclamar-xp" class="btn-xp" onclick="reclamarXP()">🌟 Terminé de Leer (+ XP)</button>
+        </div>
+        <iframe id="visor-pdf" src=""></iframe>
+    </div>
+
+    <script>
+        let xpActualLibro = 0;
+
+        function abrirLibro(archivoPDF, titulo, xp) {
+            xpActualLibro = xp;
+            document.getElementById('menu-biblioteca').style.display = 'none';
+            document.getElementById('zona-lector').style.display = 'flex';
+            
+            document.getElementById('titulo-lector').innerText = titulo;
+            document.getElementById('btn-reclamar-xp').innerText = `🌟 Terminé (+${xp} XP)`;
+            
+            // Le decimos al iframe que cargue el PDF desde tu carpeta local 'libros'
+            document.getElementById('visor-pdf').src = '../libros/' + archivoPDF;
+        }
+
+        function cerrarLibro() {
+            document.getElementById('visor-pdf').src = ''; // Limpiar memoria
+            document.getElementById('zona-lector').style.display = 'none';
+            document.getElementById('menu-biblioteca').style.display = 'block';
+        }
+
+        function reclamarXP() {
+            try {
+                const u = new URLSearchParams(window.parent.location.search).get('u') || 'peque';
+                let pts = parseInt(localStorage.getItem('pts_'+u)) || 0;
+                localStorage.setItem('pts_'+u, pts + xpActualLibro);
+                
+                if(window.parent.updateUI) window.parent.updateUI();
+                if(window.parent.confetti) window.parent.confetti({particleCount: 200, spread: 90, origin: { y: 0.6 }});
+                if(window.parent.Swal) window.parent.Swal.fire({title: '¡Conocimiento Adquirido!', text: `Has ganado ${xpActualLibro} XP por tu aprendizaje.`, icon: 'success', background: '#0a0a19', color: '#fff'});
+                
+                cerrarLibro(); // Lo regresa al menú de libros
+            } catch(e) {}
+        }
+    </script>
+</body></html>

@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="es"><head><meta charset="UTF-8"><link rel="stylesheet" href="../style.css">
+<style>body{margin:0;background:black;height:100vh;display:flex;flex-direction:column;} .header{background:#111;padding:15px;display:flex;justify-content:space-between;border-bottom:2px solid #ff0055;} button{background:#ff0055;color:white;border:none;padding:10px 20px;border-radius:5px;cursor:pointer;font-family:'Orbitron',sans-serif;}</style>
+</head><body>
+    <div class="header">
+        <span style="color:white;font-family:'Orbitron',sans-serif;">👾 Sistema Retro Activado</span>
+        <button onclick="window.location.href='arcade.html'">⬅️ Volver al Arcade</button>
+    </div>
+    
+    <div style="width:100%; height:100%; flex-grow:1;">
+        <div id="game"></div>
+    </div>
+
+    <script>
+        EJS_player = '#game';
+        EJS_core = 'snes'; // n64, gba, nes, segaMD...
+        EJS_gameName = 'Mi Juego Retro';
+        EJS_color = '#ff0055';
+        EJS_startOnLoaded = true;
+        EJS_pathtodata = 'https://cdn.emulatorjs.org/stable/data/';
+        
+        // ¡AQUÍ ES DONDE CONECTARÁS TU JUEGO DESCARGADO!
+        // Ejemplo: EJS_gameUrl = '../juegos/mario.smc';
+        EJS_gameUrl = ''; // Dejar vacío muestra el menú del emulador para arrastrar juegos
+    </script>
+    <script src="https://cdn.emulatorjs.org/stable/data/loader.js"></script>
+</body></html>
